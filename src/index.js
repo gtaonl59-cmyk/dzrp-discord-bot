@@ -12,51 +12,45 @@ import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const TOKEN = process.env.DISCORD_TOKEN;
+
 if (!TOKEN) {
-  console.error("❌ DISCORD_TOKEN is not set in environment variables.");
+  console.error("❌ DISCORD_TOKEN is missing");
   process.exit(1);
 }
 
-const MESSAGE_CONTENT_ENABLED = process.env.MESSAGE_CONTENT_INTENT === "true";
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent,
+  ],
+});
 
-const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages];
-if (MESSAGE_CONTENT_ENABLED) {
-  intents.push(GatewayIntentBits.MessageContent);
-  console.log("ℹ️  MessageContent intent enabled — prefix commands (!cmd) active.");
-} else {
-  console.log(
-    "ℹ️  Running in slash-command-only mode. To enable !prefix commands,\n" +
-    "   1. Go to discord.com/developers → Your App → Bot\n" +
-    "   2. Enable 'Message Content Intent'\n" +
-    "   3. Set env var MESSAGE_CONTENT_INTENT=true in Replit Secrets"
-  );
-}
-
-const client = new Client({ intents });
-
+// collections
 client.commands = new Collection();
 client.prefixCommands = new Collection();
 
+// load commands
 const commandsPath = join(__dirname, "commands");
-const commandFiles = readdirSync(commandsPath).filter((f) => f.endsWith(".js"));
+const commandFiles = readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
 for (const file of commandFiles) {
   const mod = await import(join(commandsPath, file));
   const command = mod.default;
-  if (command.data) {
-    client.commands.set(command.data.name, command);
-  }
-  if (command.prefix) {
-    client.prefixCommands.set(command.prefix, command);
-  }
+
+  if (command.data) client.commands.set(command.data.name, command);
+  if (command.prefix) client.prefixCommands.set(command.prefix, command);
 }
 
+// load events
 const eventsPath = join(__dirname, "events");
-const eventFiles = readdirSync(eventsPath).filter((f) => f.endsWith(".js"));
+const eventFiles = readdirSync(eventsPath).filter(f => f.endsWith(".js"));
 
 for (const file of eventFiles) {
   const mod = await import(join(eventsPath, file));
   const event = mod.default;
+
   if (event.once) {
     client.once(event.name, (...args) => event.execute(...args, client));
   } else {
@@ -64,43 +58,41 @@ for (const file of eventFiles) {
   }
 }
 
+// slash handler
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
+
   try {
     await command.execute(interaction, client);
   } catch (err) {
-    console.error(`❌ Error in /${interaction.commandName}:`, err);
-    const msg = {
-      content: "⚠️ حدث خطأ أثناء تنفيذ الأمر.",
+    console.error(err);
+    await interaction.reply({
+      content: "❌ Error happened",
       flags: MessageFlags.Ephemeral,
-    };
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(msg);
-    } else {
-      await interaction.reply(msg);
-    }
+    });
   }
 });
 
-if (MESSAGE_CONTENT_ENABLED) {
-  client.on(Events.MessageCreate, async (message) => {
-    if (message.author.bot) return;
-    if (!message.content.startsWith("!")) return;
+// prefix commands
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return;
+  if (!message.content.startsWith("!")) return;
 
-    const args = message.content.slice(1).trim().split(/\s+/);
-    const commandName = args.shift().toLowerCase();
-    const command = client.prefixCommands.get(commandName);
-    if (!command) return;
+  const args = message.content.slice(1).trim().split(" ");
+  const cmd = args.shift().toLowerCase();
 
-    try {
-      await command.executePrefix(message, args, client);
-    } catch (err) {
-      console.error(`❌ Error in !${commandName}:`, err);
-      await message.reply("⚠️ حدث خطأ أثناء تنفيذ الأمر.");
-    }
-  });
-}
+  const command = client.prefixCommands.get(cmd);
+  if (!command) return;
+
+  try {
+    await command.executePrefix(message, args, client);
+  } catch (err) {
+    console.error(err);
+    message.reply("❌ Error");
+  }
+});
 
 client.login(TOKEN);
