@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: dzrp-discord-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: MESSAGE_CONTENT_INTENT
+        value: "false"
+    disk:
+      name: bot-data
+      mountPath: /opt/render/project/src/artifacts/discord-bot/data
+      sizeGB: 1
