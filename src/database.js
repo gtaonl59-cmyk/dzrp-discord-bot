@@ -33,16 +33,6 @@ function defaults(u) {
     last_rob: null,
     total_earned: 0,
     total_lost: 0,
-      houses: [],
-      cars: [],
-      business: null,
-      vip: false,
-      wanted: 0,
-      jail: {
-        jailed: false,
-        reason: null,
-        time: 0
-      },
     ...u,
   };
 }
@@ -228,16 +218,3 @@ export const JOBS = {
 };
 
 export default { load, save };
-
-
-export function saveUser(userId, newData) {
-  const data = load();
-  if (!data.users[userId]) return;
-
-  data.users[userId] = {
-    ...data.users[userId],
-    ...newData
-  };
-
-  save(data);
-}

@@ -157,14 +157,3 @@ On Render, the persistent disk (`/data`) ensures data survives restarts.
 ## License
 
 MIT — free to use and modify.
-
-
-## Added Systems
-- Inventory
-- Bank
-- Casino
-- VIP
-- Jail
-- Houses
-- Garage
-- Persistent Save
