@@ -1,33 +1,42 @@
-import fs from "fs";
 
-const dbFile = "./src/data/db.json";
-
-function loadDB() {
-  if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, "{}");
-  return JSON.parse(fs.readFileSync(dbFile));
-}
-
-function saveDB(db) {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
+import { saveUser } from "../database.js";
 
 export default {
-  prefix: "jail",
+  data: new SlashCommandBuilder()
+    .setName("jail")
+    .setDescription("سجن لاعب")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addUserOption(o =>
+      o.setName("user")
+       .setDescription("اللاعب")
+       .setRequired(true)
+    )
+    .addIntegerOption(o =>
+      o.setName("minutes")
+       .setDescription("المدة")
+       .setRequired(true)
+    ),
 
-  async executePrefix(message, args) {
-    const db = loadDB();
-    const user = message.mentions.users.first();
+  async execute(interaction) {
+    const user = interaction.options.getUser("user");
+    const minutes = interaction.options.getInteger("minutes");
 
-    if (!user) return message.reply("❌ منشن شخص");
+    saveUser(user.id, {
+      jail: {
+        jailed: true,
+        reason: "Admin Jail",
+        time: minutes
+      }
+    });
 
-    const time = parseInt(args[1]) || 60;
-
-    if (!db[user.id]) db[user.id] = {};
-
-    db[user.id].jail = Date.now() + time * 1000;
-
-    saveDB(db);
-
-    message.reply(`🚔 تم سجن اللاعب لمدة ${time} ثانية`);
+    interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x95a5a6)
+          .setTitle("🚔 تم سجن اللاعب")
+          .setDescription(`${user} دخل للحبس ${minutes} دقيقة`)
+      ]
+    });
   }
 };

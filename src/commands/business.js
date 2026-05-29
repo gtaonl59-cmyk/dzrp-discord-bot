@@ -1,35 +1,37 @@
-import fs from "fs";
 
-const dbFile = "./src/data/db.json";
-
-function loadDB() {
-  if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, "{}");
-  return JSON.parse(fs.readFileSync(dbFile));
-}
-
-function saveDB(db) {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { getUser, createUser, saveUser } from "../database.js";
 
 export default {
-  prefix: "buybiz",
+  data: new SlashCommandBuilder()
+    .setName("business")
+    .setDescription("إنشاء شركة")
+    .addStringOption(o =>
+      o.setName("name")
+       .setDescription("اسم الشركة")
+       .setRequired(true)
+    ),
 
-  async executePrefix(message) {
-    const db = loadDB();
-    const user = message.author.id;
+  async execute(interaction) {
+    let user = getUser(interaction.user.id);
 
-    if (!db[user]) db[user] = { money: 0, biz: 0 };
+    if (!user) {
+      user = createUser(interaction.user.id, interaction.user.username);
+    }
 
-    const price = 10000;
+    const name = interaction.options.getString("name");
 
-    if (db[user].money < price)
-      return message.reply("❌ ما عندكش فلوس");
+    saveUser(interaction.user.id, {
+      business: name
+    });
 
-    db[user].money -= price;
-    db[user].biz += 1;
-
-    saveDB(db);
-
-    message.reply("🏢 شريت شركة!");
+    interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x9b59b6)
+          .setTitle("🏢 تم إنشاء شركة")
+          .setDescription(`اسم الشركة: ${name}`)
+      ]
+    });
   }
 };

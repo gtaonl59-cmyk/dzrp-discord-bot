@@ -1,35 +1,42 @@
-import fs from "fs";
 
-const dbFile = "./src/data/db.json";
-
-function loadDB() {
-  if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, "{}");
-  return JSON.parse(fs.readFileSync(dbFile));
-}
-
-function saveDB(db) {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { getUser, createUser, removeMoney, saveUser } from "../database.js";
 
 export default {
-  prefix: "buyhouse",
+  data: new SlashCommandBuilder()
+    .setName("buyhouse")
+    .setDescription("شراء بيت"),
 
-  async executePrefix(message) {
-    const db = loadDB();
-    const user = message.author.id;
+  async execute(interaction) {
+    let user = getUser(interaction.user.id);
 
-    if (!db[user]) db[user] = { money: 0, houses: 0 };
+    if (!user) {
+      user = createUser(interaction.user.id, interaction.user.username);
+    }
 
-    const price = 5000;
+    const price = 1500000;
 
-    if (db[user].money < price)
-      return message.reply("❌ ما عندكش فلوس كافية");
+    if (user.balance < price) {
+      return interaction.reply({
+        content: "❌ تحتاج 1,500,000$",
+        ephemeral: true
+      });
+    }
 
-    db[user].money -= price;
-    db[user].houses += 1;
+    removeMoney(interaction.user.id, price, "House", interaction.user.id);
 
-    saveDB(db);
+    const houses = user.houses || [];
+    houses.push("بيت فاخر");
 
-    message.reply("🏠 شريت بيت بنجاح!");
+    saveUser(interaction.user.id, { houses });
+
+    interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x2ecc71)
+          .setTitle("🏠 تم شراء البيت")
+          .setDescription("مبروك عليك البيت")
+      ]
+    });
   }
 };

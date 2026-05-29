@@ -1,35 +1,59 @@
-import fs from "fs";
 
-const dbFile = "./src/data/db.json";
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { getUser, createUser, removeMoney, saveUser } from "../database.js";
 
-function loadDB() {
-  if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, "{}");
-  return JSON.parse(fs.readFileSync(dbFile));
-}
-
-function saveDB(db) {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
+const CARS = {
+  BMW: 500000,
+  GTR: 1000000,
+  Lambo: 2500000
+};
 
 export default {
-  prefix: "buycar",
+  data: new SlashCommandBuilder()
+    .setName("buycar")
+    .setDescription("شراء سيارة")
+    .addStringOption(o =>
+      o.setName("name")
+       .setDescription("اسم السيارة")
+       .setRequired(true)
+       .addChoices(
+         { name: "BMW", value: "BMW" },
+         { name: "GTR", value: "GTR" },
+         { name: "Lambo", value: "Lambo" }
+       )
+    ),
 
-  async executePrefix(message) {
-    const db = loadDB();
-    const user = message.author.id;
+  async execute(interaction) {
+    let user = getUser(interaction.user.id);
 
-    if (!db[user]) db[user] = { money: 0, cars: 0 };
+    if (!user) {
+      user = createUser(interaction.user.id, interaction.user.username);
+    }
 
-    const price = 3000;
+    const name = interaction.options.getString("name");
+    const price = CARS[name];
 
-    if (db[user].money < price)
-      return message.reply("❌ ما عندكش فلوس");
+    if (user.balance < price) {
+      return interaction.reply({
+        content: "❌ فلوسك ما تكفيش",
+        ephemeral: true
+      });
+    }
 
-    db[user].money -= price;
-    db[user].cars += 1;
+    removeMoney(interaction.user.id, price, "Car", interaction.user.id);
 
-    saveDB(db);
+    const cars = user.cars || [];
+    cars.push(name);
 
-    message.reply("🚗 شريت سيارة!");
+    saveUser(interaction.user.id, { cars });
+
+    interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x3498db)
+          .setTitle("🚗 تم شراء سيارة")
+          .setDescription(`اشتريت ${name}`)
+      ]
+    });
   }
 };

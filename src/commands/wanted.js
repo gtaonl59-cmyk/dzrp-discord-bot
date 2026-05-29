@@ -1,21 +1,26 @@
-import fs from "fs";
 
-const dbFile = "./src/data/db.json";
-
-function loadDB() {
-  if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, "{}");
-  return JSON.parse(fs.readFileSync(dbFile));
-}
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { getUser, createUser } from "../database.js";
 
 export default {
-  prefix: "wanted",
+  data: new SlashCommandBuilder()
+    .setName("wanted")
+    .setDescription("عرض الونتد"),
 
-  async executePrefix(message) {
-    const db = loadDB();
-    const user = message.author.id;
+  async execute(interaction) {
+    let user = getUser(interaction.user.id);
 
-    if (!db[user]) db[user] = { wanted: 0 };
+    if (!user) {
+      user = createUser(interaction.user.id, interaction.user.username);
+    }
 
-    message.reply(`⚠️ Wanted Level: ${db[user].wanted}`);
+    interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xe74c3c)
+          .setTitle("🔫 الونتد")
+          .setDescription(`مستوى الونتد: ${user.wanted || 0}`)
+      ]
+    });
   }
 };
