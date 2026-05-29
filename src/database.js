@@ -33,9 +33,12 @@ function defaults(u) {
     last_rob: null,
     total_earned: 0,
     total_lost: 0,
+    balance: 0,
     ...u,
   };
 }
+
+/* ================= USER ================= */
 
 export function getUser(discordId) {
   const data = load();
@@ -45,6 +48,7 @@ export function getUser(discordId) {
 
 export function createUser(discordId, username) {
   const data = load();
+
   if (!data.users[discordId]) {
     data.users[discordId] = {
       discord_id: discordId,
@@ -64,11 +68,82 @@ export function createUser(discordId, username) {
     };
     save(data);
   }
+
   return defaults(data.users[discordId]);
 }
 
+/* ================= MONEY ================= */
+
+export function getBalance(discordId) {
+  const user = getUser(discordId);
+  return user ? user.balance : 0;
+}
+
+export function addMoney(discordId, amount) {
+  const data = load();
+
+  if (data.users[discordId]) {
+    data.users[discordId].balance += amount;
+    data.users[discordId].total_earned += amount;
+    save(data);
+  }
+}
+
+export function removeMoney(discordId, amount) {
+  const data = load();
+
+  if (data.users[discordId]) {
+    const actual = Math.min(amount, data.users[discordId].balance);
+
+    data.users[discordId].balance -= actual;
+    data.users[discordId].total_lost += actual;
+
+    save(data);
+  }
+}
+
+export function setMoney(discordId, amount) {
+  const data = load();
+
+  if (data.users[discordId]) {
+    data.users[discordId].balance = amount;
+    save(data);
+  }
+}
+
+/* ================= XP ================= */
+
+export function addXp(discordId, amount) {
+  const data = load();
+
+  if (!data.users[discordId]) return null;
+
+  const u = data.users[discordId];
+
+  u.xp += amount;
+  u.level = calcLevel(u.xp);
+
+  save(data);
+
+  return { xp: u.xp, level: u.level };
+}
+
+/* ================= JOB ================= */
+
+export function setJob(discordId, job) {
+  const data = load();
+
+  if (data.users[discordId]) {
+    data.users[discordId].job = job;
+    save(data);
+  }
+}
+
+/* ================= VERIFY ================= */
+
 export function setPsn(discordId, psn) {
   const data = load();
+
   if (data.users[discordId]) {
     data.users[discordId].psn = psn;
     data.users[discordId].verified = true;
@@ -76,111 +151,9 @@ export function setPsn(discordId, psn) {
   }
 }
 
-export function getBalance(discordId) {
-  const user = getUser(discordId);
-  return user ? user.balance : 0;
-}
-
-export function addMoney(discordId, amount, reason, adminId) {
-  const data = load();
-  if (data.users[discordId]) {
-    data.users[discordId].balance = (data.users[discordId].balance || 0) + amount;
-    data.users[discordId].total_earned = (data.users[discordId].total_earned || 0) + amount;
-    data.economy_log.push({
-      discord_id: discordId,
-      amount,
-      reason: reason || null,
-      admin_id: adminId || null,
-      created_at: new Date().toISOString(),
-    });
-    save(data);
-  }
-}
-
-export function removeMoney(discordId, amount, reason, adminId) {
-  const data = load();
-  if (data.users[discordId]) {
-    const actual = Math.min(amount, data.users[discordId].balance || 0);
-    data.users[discordId].balance = Math.max(0, (data.users[discordId].balance || 0) - amount);
-    data.users[discordId].total_lost = (data.users[discordId].total_lost || 0) + actual;
-    data.economy_log.push({
-      discord_id: discordId,
-      amount: -amount,
-      reason: reason || null,
-      admin_id: adminId || null,
-      created_at: new Date().toISOString(),
-    });
-    save(data);
-  }
-}
-
-export function setMoney(discordId, amount, adminId) {
-  const data = load();
-  if (data.users[discordId]) {
-    data.users[discordId].balance = amount;
-    data.economy_log.push({
-      discord_id: discordId,
-      amount,
-      reason: "set by admin",
-      admin_id: adminId || null,
-      created_at: new Date().toISOString(),
-    });
-    save(data);
-  }
-}
-
-export function addXp(discordId, amount) {
-  const data = load();
-  if (!data.users[discordId]) return null;
-  const u = data.users[discordId];
-  u.xp = (u.xp || 0) + amount;
-  const newLevel = calcLevel(u.xp);
-  const leveledUp = newLevel > (u.level || 1);
-  u.level = newLevel;
-  save(data);
-  return { xp: u.xp, level: u.level, leveledUp };
-}
-
-export function setJob(discordId, job) {
-  const data = load();
-  if (data.users[discordId]) {
-    data.users[discordId].job = job;
-    save(data);
-  }
-}
-
-export function setCooldown(discordId, field) {
-  const data = load();
-  if (data.users[discordId]) {
-    data.users[discordId][field] = new Date().toISOString();
-    save(data);
-  }
-}
-
-export function getAllUsers() {
-  const data = load();
-  return Object.values(data.users).map(defaults).sort((a, b) => b.balance - a.balance);
-}
-
-export function getTopUsers(limit = 10) {
-  const data = load();
-  return Object.values(data.users)
-    .map(defaults)
-    .filter((u) => u.verified)
-    .sort((a, b) => b.balance - a.balance)
-    .slice(0, limit);
-}
-
-export function getTopXpUsers(limit = 10) {
-  const data = load();
-  return Object.values(data.users)
-    .map(defaults)
-    .sort((a, b) => b.xp - a.xp)
-    .slice(0, limit);
-}
-
 export function resetVerify(discordId) {
   const data = load();
+
   if (data.users[discordId]) {
     data.users[discordId].psn = null;
     data.users[discordId].verified = false;
@@ -188,33 +161,39 @@ export function resetVerify(discordId) {
   }
 }
 
+/* ================= LEVEL ================= */
+
 export function calcLevel(xp) {
   const thresholds = [0, 500, 1500, 3000, 5000, 10000, 20000];
+
   let level = 1;
+
   for (let i = 1; i < thresholds.length; i++) {
     if (xp >= thresholds[i]) level = i + 1;
   }
+
   return level;
 }
 
-export const LEVELS = [
-  { level: 1, name: "مبتدئ 🌱",      xp: 0 },
-  { level: 2, name: "محترف ⚡",      xp: 500 },
-  { level: 3, name: "متقدم 🔥",      xp: 1500 },
-  { level: 4, name: "خبير 💎",       xp: 3000 },
-  { level: 5, name: "نجم ⭐",        xp: 5000 },
-  { level: 6, name: "أسطورة 👑",     xp: 10000 },
-  { level: 7, name: "إله الـRP 🌌",  xp: 20000 },
-];
+/* ================= TOP ================= */
+
+export function getTopUsers(limit = 10) {
+  const data = load();
+
+  return Object.values(data.users)
+    .map(defaults)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, limit);
+}
 
 export const JOBS = {
-  "مدني":    { emoji: "🚗", salary: 150 },
-  "شرطي":   { emoji: "👮", salary: 300 },
-  "مسعف":   { emoji: "🚑", salary: 280 },
+  "مدني": { emoji: "🚗", salary: 150 },
+  "شرطي": { emoji: "👮", salary: 300 },
+  "مسعف": { emoji: "🚑", salary: 280 },
   "ميكانيكي": { emoji: "🔧", salary: 260 },
-  "تاجر":   { emoji: "🏪", salary: 350 },
-  "مهرب":   { emoji: "💊", salary: 450 },
-  "عصابة":  { emoji: "🔫", salary: 400 },
+  "تاجر": { emoji: "🏪", salary: 350 },
+  "مهرب": { emoji: "💊", salary: 450 },
+  "عصابة": { emoji: "🔫", salary: 400 },
 };
 
 export default { load, save };
