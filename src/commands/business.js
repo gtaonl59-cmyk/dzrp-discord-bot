@@ -1,5 +1,7 @@
 
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import {
+ SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags
+} from "discord.js";
 import { getUser, createUser, saveUser } from "../database.js";
 
 export default {

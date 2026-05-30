@@ -1,4 +1,6 @@
-import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from "discord.js";
+import {
+  SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags
+} from "discord.js";
 import { getUser, createUser, getBalance } from "../database.js";
 
 export default {

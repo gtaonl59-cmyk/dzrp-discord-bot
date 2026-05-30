@@ -60,6 +60,6 @@ function buildHelp() {
         ].join("\n"),
       }
     )
-    .setFooter({ text: "DzRP Bot • نظام GTA RP متكامل" })
+    .setFooter({ text: "المطور حاج احمد ياسين الجزائري • DzRP Bot • نظام RP متكامل" })
     .setTimestamp();
 }
