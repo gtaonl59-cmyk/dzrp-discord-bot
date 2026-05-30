@@ -4,9 +4,7 @@
   "description": "RP City Discord Bot — economy, RP, jobs, property, vehicles, gangs, prison, VIP, moderation and more",
   "type": "module",
   "scripts": {
-    "scripts": {
-  "start": "node bot/index.js"
-}
+    "start": "node bot/index.js",
     "dev": "tsx watch src/bot/index.ts",
     "typecheck": "tsc --noEmit"
   },
