@@ -1,159 +1,115 @@
-# DzRP Discord Bot 🎮
+# RP City Discord Bot
 
-A full-featured **GTA RP Discord bot** built with discord.js v14.  
-Designed for DzRp-style Arabic servers with economy, jobs, XP ranks, PSN verification and more.
-
----
+A complete, professional Discord Roleplay Bot with economy, RP characters, jobs, properties, vehicles, gangs, prison, VIP tiers, moderation, tickets, and more.
 
 ## Features
 
-| Category | Commands |
-|---|---|
-| 🔐 Verification | `/verify`, `/profile`, `/userinfo` |
-| 💰 Economy | `/balance`, `/daily`, `/work`, `/pay`, `/rob` |
-| 🎭 RP System | `/setjob`, `/ranks`, `/leaderboard` |
-| 👮 Admin | `/addmoney`, `/setmoney`, `/admin stats`, `/admin resetverify` |
-| 📖 General | `/help` |
-
-### RP Jobs
-| Job | Emoji | Daily Salary |
-|---|---|---|
-| مدني (Civilian) | 🚗 | $150 |
-| شرطي (Police) | 👮 | $300 |
-| مسعف (Medic) | 🚑 | $280 |
-| ميكانيكي (Mechanic) | 🔧 | $260 |
-| تاجر (Merchant) | 🏪 | $350 |
-| مهرب (Smuggler) | 💊 | $450 |
-| عصابة (Gang) | 🔫 | $400 |
-
-### XP Ranks
-`مبتدئ 🌱` → `محترف ⚡` → `متقدم 🔥` → `خبير 💎` → `نجم ⭐` → `أسطورة 👑` → `إله الـRP 🌌`
-
----
+| System | Commands |
+|--------|----------|
+| 🎭 Roleplay | `/character` (create/list/view/switch/edit/delete), `/me`, `/say`, `/do` |
+| 💰 Economy | `/balance`, `/daily`, `/weekly`, `/monthly`, `/bank`, `/transfer`, `/work`, `/rob`, `/transactions` |
+| 📦 Inventory | `/inventory` (view/shop/buy/drop) |
+| 💼 Jobs | `/job` (list/apply/quit/info) — 13 jobs |
+| 🏠 Property | `/property` (listings/buy/myproperties/sell) |
+| 🚗 Vehicles | `/vehicle` (dealership/buy/garage/sell/register/insure) |
+| 💀 Gang/Mafia | `/gang` (create/info/invite/kick/leave/disband/list) |
+| 🔒 Prison | `/prison` (jail/release/status/check) |
+| 💎 VIP | `/vip` (info/buy/status/grant) — 5 tiers |
+| 👤 Profile | `/profile`, `/rank` (me/top) |
+| 🎮 Fun | `/fun` (coinflip/dice/casino/wheel/trivia/rps) |
+| 🛡️ Mod | `/mod` (ban/kick/warn/timeout/unban/warnings/purge) |
+| 🎫 Tickets | `/ticket` (create/close/list/add) |
+| ⚙️ Server | `/setup`, `/suggest`, `/giveaway`, `/help` |
 
 ## Setup
 
-### 1. Prerequisites
-- Node.js **v20+**
-- A Discord bot application ([discord.com/developers](https://discord.com/developers/applications))
+### 1. Create Discord Application
+1. Go to https://discord.com/developers/applications → New Application → Bot
+2. Copy your **Bot Token**
+3. Enable **Message Content Intent** and **Server Members Intent** under Bot → Privileged Gateway Intents
+4. Invite bot: OAuth2 → URL Generator → scopes: `bot` + `applications.commands` → permissions: `Administrator`
 
-### 2. Clone & Install
-```bash
-git clone https://github.com/YOUR_USERNAME/dzrp-discord-bot.git
-cd dzrp-discord-bot
-npm install
-```
+### 2. Set Up MongoDB Atlas
+1. Create free cluster at https://cloud.mongodb.com
+2. **Database Access** → Add user → set a simple username + password (letters/numbers only)
+3. **Network Access** → Add IP → Allow Access from Anywhere (`0.0.0.0/0`)
+4. **Connect** → Drivers → copy the connection string
+5. Replace `<password>` in the URI with your actual password
+
+> **Important:** If your password contains special characters (`?`, `@`, `#`, `!`, `/`), URL-encode them:
+> `?` → `%3F` | `@` → `%40` | `#` → `%23` | `!` → `%21`
 
 ### 3. Configure Environment
 ```bash
 cp .env.example .env
-# Fill in your values in .env
+# Edit .env with your actual DISCORD_TOKEN and MONGODB_URI
 ```
 
-Required variables:
-| Variable | Where to find it |
-|---|---|
-| `DISCORD_TOKEN` | Developer Portal → Bot → Token |
-| `DISCORD_CLIENT_ID` | Developer Portal → General Information → Application ID |
-| `DISCORD_GUILD_ID` | Right-click your server → Copy Server ID (needs Developer Mode) |
+### 4. Install & Run
 
-### 4. Invite Bot to Your Server
-Generate an invite URL with these scopes: `bot` + `applications.commands`
-
-```
-https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot+applications.commands&permissions=268519432
-```
-
-Replace `YOUR_CLIENT_ID` with your actual client ID.
-
-### 5. Deploy Slash Commands
+**For development (TypeScript, hot reload):**
 ```bash
-npm run deploy
+npm install
+npm run dev
 ```
 
-Run this once (or whenever you add/change commands).
-
-### 6. Start the Bot
+**For production (compiled JS):**
 ```bash
+npm install
+npm run build
 npm start
 ```
 
----
+Slash commands are automatically registered globally when the bot starts.
 
-## Enable Prefix Commands (`!cmd`)
+## Running 24/7
 
-By default the bot runs slash-command-only mode.  
-To enable `!verify`, `!balance`, etc.:
+### Option A — Railway (recommended, free tier available)
+1. Push code to GitHub
+2. Go to https://railway.app → New Project → Deploy from GitHub
+3. Add environment variables: `DISCORD_TOKEN` and `MONGODB_URI`
 
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications) → Your App → **Bot**
-2. Under **Privileged Gateway Intents**, enable **Message Content Intent**
-3. Set `MESSAGE_CONTENT_INTENT=true` in your `.env`
+### Option B — VPS / Server
+```bash
+npm install -g pm2
+npm run build
+pm2 start dist/bot/index.js --name rpcity-bot
+pm2 save
+pm2 startup
+```
 
----
+### Option C — Replit
+1. Upload this project to Replit
+2. Add `DISCORD_TOKEN` and `MONGODB_URI` to Replit Secrets
+3. Run `npm run dev`
 
-## Deploy to Render (Free)
-
-> Data is stored in `data/dzrp.json` — use Render's **persistent disk** to keep it between restarts.
-
-1. Push this repo to GitHub
-2. Go to [render.com](https://render.com) → **New → Blueprint**
-3. Connect your GitHub repo — Render will detect `render.yaml` automatically
-4. Add your environment variables in the Render dashboard:
-   - `DISCORD_TOKEN`
-   - `DISCORD_CLIENT_ID`
-   - `DISCORD_GUILD_ID`
-5. Click **Deploy**
-
-The `render.yaml` in this repo configures everything automatically.
-
----
-
-## Project Structure
+## File Structure
 
 ```
-dzrp-discord-bot/
-├── src/
-│   ├── index.js              # Entry point & event loader
-│   ├── database.js           # JSON-based data store
-│   ├── deploy-commands.js    # Slash command registration
+src/
+├── bot/
+│   ├── index.ts              # Entry point
 │   ├── commands/
-│   │   ├── verify.js         # PSN verification + role assignment
-│   │   ├── balance.js        # Check balance
-│   │   ├── daily.js          # Daily reward (24h cooldown)
-│   │   ├── work.js           # Work for money (1h cooldown)
-│   │   ├── pay.js            # Transfer money
-│   │   ├── rob.js            # Rob another player (risky)
-│   │   ├── profile.js        # Full RP profile card
-│   │   ├── setjob.js         # Admin: assign RP job
-│   │   ├── ranks.js          # XP rank table
-│   │   ├── leaderboard.js    # Money & XP leaderboards
-│   │   ├── userinfo.js       # Member info
-│   │   ├── addmoney.js       # Admin: add/deduct money
-│   │   ├── setmoney.js       # Admin: set exact balance
-│   │   ├── admin.js          # Admin panel (stats, reset verify)
-│   │   └── help.js           # Command list
-│   └── events/
-│       ├── ready.js          # Bot online event
-│       ├── guildMemberAdd.js # Welcome new members
-│       └── error.js          # Error handling
-├── data/
-│   └── dzrp.json             # Player database (auto-created)
-├── .env.example              # Environment variable template
-├── .gitignore
-├── render.yaml               # Render deployment config
-└── README.md
+│   │   ├── economy/          # balance, daily, weekly, monthly, bank, transfer, work, rob, transactions
+│   │   ├── rp/               # character, me, say, do, inventory
+│   │   ├── jobs/             # job
+│   │   ├── property/         # property
+│   │   ├── vehicle/          # vehicle
+│   │   ├── gang/             # gang
+│   │   ├── prison/           # prison
+│   │   ├── mod/              # mod
+│   │   ├── profile/          # profile, rank
+│   │   ├── vip/              # vip
+│   │   ├── tickets/          # ticket
+│   │   ├── fun/              # fun
+│   │   └── server/           # setup, suggest, giveaway, help
+│   ├── events/               # ready, interactionCreate, guildMemberAdd, messageCreate
+│   ├── handlers/             # commandHandler, eventHandler
+│   ├── models/               # Mongoose schemas
+│   └── utils/                # helpers, embeds
+└── lib/
+    └── logger.ts
 ```
-
----
-
-## Data Storage
-
-All player data is stored in `data/dzrp.json`.  
-**Back this file up regularly** when self-hosting.  
-On Render, the persistent disk (`/data`) ensures data survives restarts.
-
----
 
 ## License
-
-MIT — free to use and modify.
+MIT
